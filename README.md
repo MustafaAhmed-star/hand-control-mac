@@ -18,7 +18,7 @@ Needs a Mac with Apple Silicon (M1 or newer) and macOS 11 or later. Intel Macs a
 
 **Option A: download the ready app**
 
-1. Download `HandControl-mac.zip` from this repo's **Releases** page, then double-click it to unzip.
+1. Download [HandControl-mac.zip](../../releases/latest/download/HandControl-mac.zip) from the latest release, then double-click it to unzip.
 2. Drag **HandControl** into your **Applications** folder.
 3. Double-click it. The first time, macOS blocks apps from outside the App Store:
    go to **System Settings → Privacy & Security**, scroll down, click **Open Anyway** next to HandControl, then **Open**.
@@ -68,7 +68,7 @@ The camera picture is processed on your Mac only. Nothing is recorded, saved or 
 
 - `hand_control.py`: camera loop, MediaPipe hand tracking, drawing, and keyboard shortcuts.
 - `gestures.py`: turns the 21 hand points into a gesture, plus the hold/repeat timing. It has no camera or OS code, so it is fully unit tested (`python -m unittest discover -s tests`).
-- `.github/workflows/build-mac.yml`: builds the app on GitHub's Mac machines on every push; a `v*` tag publishes it as a release.
+- `.github/workflows/build-mac.yml`: builds the app on GitHub's Mac machines and publishes a new release on every push to `main`.
 - `mac_actions.py`: volume through `osascript`, key presses through macOS CoreGraphics. No extra packages are needed for this.
 
 Built with [MediaPipe](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker) hand tracking and [OpenCV](https://opencv.org/).
