@@ -44,7 +44,7 @@ class ClassifyTest(unittest.TestCase):
         self.assertEqual(g.classify(rotate(point, -90)), g.POINT_LEFT)
 
     def test_diagonal_is_ignored(self):
-        self.assertIsNone(g.classify(rotate(hand(thumb=THUMB_UP), 45)))
+        self.assertNotIn(g.classify(rotate(hand(thumb=THUMB_UP), 45)), (g.THUMBS_UP, g.THUMBS_DOWN))
         self.assertIsNone(g.classify(rotate(hand(index=True), 45)))
 
     def test_pinch(self):
@@ -52,10 +52,21 @@ class ClassifyTest(unittest.TestCase):
         thumb = [(-20, -15), (-35, -30), (-40, -55), (-40, -75)]
         self.assertEqual(g.classify(hand(thumb=thumb, index_pts=index)), g.PINCH)
 
-    def test_open_hand_and_fist_do_nothing(self):
-        self.assertIsNone(g.classify(hand(True, True, True, True)))
+    def test_open_palm_and_fist(self):
+        self.assertEqual(g.classify(hand(True, True, True, True)), g.OPEN_PALM)
         tucked_thumb = [(-20, -15), (-30, -35), (-20, -50), (-10, -55)]
-        self.assertIsNone(g.classify(hand(thumb=tucked_thumb)))
+        self.assertEqual(g.classify(hand(thumb=tucked_thumb)), g.FIST)
+
+    def test_victory_in_any_direction(self):
+        for degrees in (0, 90, -90, 45):
+            self.assertEqual(g.classify(rotate(hand(index=True, middle=True), degrees)), g.VICTORY)
+
+    def test_call_me(self):
+        thumb_out = [(-20, -15), (-45, -25), (-70, -35), (-95, -45)]
+        self.assertEqual(g.classify(hand(pinky=True, thumb=thumb_out)), g.CALL_ME)
+
+    def test_pointing_up_is_not_an_arrow(self):
+        self.assertIsNone(g.classify(hand(index=True)))
 
     def test_bad_input(self):
         self.assertIsNone(g.classify([]))

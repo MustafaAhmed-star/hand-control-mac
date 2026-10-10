@@ -20,6 +20,18 @@ jobs:
         with:
           python-version: "3.12"
       - run: ./build_mac.sh --no-install
+      - name: Check the macOS bindings load and run
+        run: |
+          .venv/bin/python -c "
+          import mac_actions as m
+          print('accessibility:', m.can_press_keys())
+          p = m._cursor(); print('cursor:', p.x, p.y)
+          b = m._display_bounds(m._main_display()); print('screen:', b.size.width, b.size.height)
+          print('scroll API:', m._create_scroll is not None)
+          m.move_mouse(0.5, 0.5); m.scroll(1); m.mouse_button('left', False)
+          m.press_key(m._MODIFIER_KEYS['ctrl'])
+          print('ok')
+          "
       - uses: actions/upload-artifact@v4
         with:
           name: HandControl-mac

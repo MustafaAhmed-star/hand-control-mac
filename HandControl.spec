@@ -20,7 +20,7 @@ app = BUNDLE(
     icon="icon.png",
     bundle_identifier="local.handcontrol",
     info_plist={
-        "CFBundleShortVersionString": "1.0.0",
+        "CFBundleShortVersionString": "1.1.0",
         "NSCameraUsageDescription": "Hand Control watches your hand through the camera to recognise gestures. "
                                     "Nothing is recorded or sent anywhere.",
         "NSAppleEventsUsageDescription": "Hand Control changes the system volume.",
