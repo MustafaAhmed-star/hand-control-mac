@@ -59,7 +59,9 @@ To keep it in the Dock: while it is running, right-click its Dock icon → Optio
 macOS asks for two permissions. Without them the app opens but cannot do its job.
 
 1. **Camera**: click **OK** when asked. If you said no, go to System Settings → Privacy & Security → Camera and switch on **HandControl**. The app shows "Waiting for the camera..." until access is allowed.
-2. **Accessibility**, which keys and mouse control need. The app opens the right settings page on first run. Switch on **HandControl**, then quit and reopen the app. Volume works without this.
+2. **Accessibility**, which keys, mouse control and the on-screen volume bar need. On first launch macOS shows a dialog: click **Open System Settings**, switch on **HandControl**, then quit and reopen the app. Without it, volume still works, but without the volume bar.
+
+**Switched it on but the app still says "Accessibility"?** macOS remembers the permission for one exact version of the app, so an old switch can belong to an earlier version. In System Settings → Privacy & Security → Accessibility, select **HandControl**, click **−** to remove it, then reopen Hand Control and switch it on again when asked. From v1.0.4 the app is signed so that the permission should carry over to later updates.
 
 Switching desktops and Mission Control use the standard macOS shortcuts (Control + arrow keys). If they don't work, check they are switched on in System Settings → Keyboard → Keyboard Shortcuts → Mission Control. To have desktops to switch between, open Mission Control and click **+** at the top.
 
@@ -80,7 +82,7 @@ The first run downloads the hand model (about 8 MB). When run this way, give the
 - Hold a gesture for a moment before it fires. Keep your hand upright or level; diagonal gestures are ignored on purpose.
 - Swipes need a quick, clear movement of about two hand-widths. Slow drifting is ignored, so resting your hand won't switch desktops.
 - In mouse mode, keep your hand in the middle of the camera's view: that area covers the whole screen.
-- In the Hand Control window: **H** shows the gestures, **M** switches between control and mouse mode, **P** pauses, **Q** or **Esc** quits.
+- In the Hand Control window: **H** shows the gestures, **M** switches between control and mouse mode, **A** opens the Accessibility settings, **P** pauses, **Q** or **Esc** quits.
 - If the camera cannot be opened, quit other apps that use it (Zoom, Teams, FaceTime, Photo Booth).
 
 ## Privacy

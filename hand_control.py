@@ -104,9 +104,9 @@ def main():
     landmarker = vision.HandLandmarker.create_from_options(options)
     cap = open_camera()
     control = controller.Controller()
-    keys_allowed = mac_actions.can_press_keys()
-    if not keys_allowed:
-        mac_actions.open_accessibility_settings()
+    # Shows macOS's own dialog when needed, and lists this exact version of the
+    # app under Accessibility (an older version's switch does not count).
+    keys_allowed = mac_actions.can_press_keys(ask=True)
 
     cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL)
     try:
@@ -172,7 +172,9 @@ def main():
         if show_help or now < help_until:
             draw_help(frame, control.mode)
         if not keys_allowed:
-            draw_text(frame, "Allow Accessibility for keys and mouse", 90, RED)
+            draw_text(frame, "Keys and mouse need Accessibility: press A to open Settings.", 90, RED, scale=0.6)
+            draw_text(frame, "Already on? Select HandControl in that list, click - to remove it, reopen the app.",
+                      118, RED, scale=0.6)
             if now - last_ax_check > 1.0:  # pick up the permission once it is granted
                 keys_allowed = mac_actions.can_press_keys()
                 last_ax_check = now
@@ -185,6 +187,8 @@ def main():
             paused = not paused
             for action in control.mouse.release():  # never leave a mouse button held down
                 mac_actions.perform(action)
+        if key in (ord("a"), ord("A")):
+            mac_actions.open_accessibility_settings()
         if key in (ord("h"), ord("H")):
             show_help = not (show_help or now < help_until)
             help_until = 0

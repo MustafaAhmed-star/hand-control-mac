@@ -30,6 +30,7 @@ jobs:
           print('scroll API:', m._create_scroll is not None)
           m.move_mouse(0.5, 0.5); m.scroll(1); m.mouse_button('left', False)
           m.press_key(m._MODIFIER_KEYS['ctrl'])
+          m._media_key(m._SOUND_UP); m._media_key(m._SOUND_DOWN)
           print('ok')
           "
       - uses: actions/upload-artifact@v4

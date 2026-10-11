@@ -13,6 +13,8 @@ _cg = ctypes.cdll.LoadLibrary(ctypes.util.find_library("CoreGraphics")
 _cf = ctypes.cdll.LoadLibrary(ctypes.util.find_library("CoreFoundation")
                               or "/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation")
 _ax = ctypes.cdll.LoadLibrary("/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices")
+_objc = ctypes.cdll.LoadLibrary("/usr/lib/libobjc.A.dylib")
+ctypes.cdll.LoadLibrary("/System/Library/Frameworks/AppKit.framework/AppKit")  # for NSEvent
 
 
 class CGPoint(ctypes.Structure):
@@ -44,7 +46,30 @@ _post = _fn(_cg, "CGEventPost", None, [ctypes.c_uint32, ctypes.c_void_p])
 _main_display = _fn(_cg, "CGMainDisplayID", ctypes.c_uint32, [])
 _display_bounds = _fn(_cg, "CGDisplayBounds", CGRect, [ctypes.c_uint32])
 _release = _fn(_cf, "CFRelease", None, [ctypes.c_void_p])
-_is_trusted = _fn(_ax, "AXIsProcessTrusted", ctypes.c_bool, [])
+_is_trusted = _fn(_ax, "AXIsProcessTrustedWithOptions", ctypes.c_bool, [ctypes.c_void_p])
+_dict_create = _fn(_cf, "CFDictionaryCreate", ctypes.c_void_p,
+                   [ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p), ctypes.POINTER(ctypes.c_void_p),
+                    ctypes.c_long, ctypes.c_void_p, ctypes.c_void_p])
+_PROMPT_KEY = ctypes.c_void_p.in_dll(_ax, "kAXTrustedCheckOptionPrompt")
+_CF_TRUE = ctypes.c_void_p.in_dll(_cf, "kCFBooleanTrue")
+_CF_FALSE = ctypes.c_void_p.in_dll(_cf, "kCFBooleanFalse")
+
+# Objective-C, to build the "system defined" events the keyboard's volume keys send.
+_get_class = _fn(_objc, "objc_getClass", ctypes.c_void_p, [ctypes.c_char_p])
+_selector = _fn(_objc, "sel_registerName", ctypes.c_void_p, [ctypes.c_char_p])
+_pool_push = _fn(_objc, "objc_autoreleasePoolPush", ctypes.c_void_p, [])
+_pool_pop = _fn(_objc, "objc_autoreleasePoolPop", None, [ctypes.c_void_p])
+_msg_send = ctypes.cast(_objc.objc_msgSend, ctypes.c_void_p).value
+_new_system_event = ctypes.CFUNCTYPE(
+    ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,  # class, selector
+    ctypes.c_ulong, CGPoint, ctypes.c_ulong, ctypes.c_double, ctypes.c_long,  # type, location, flags, time, window
+    ctypes.c_void_p, ctypes.c_short, ctypes.c_long, ctypes.c_long,  # context, subtype, data1, data2
+)(_msg_send)
+_event_to_cg = ctypes.CFUNCTYPE(ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)(_msg_send)
+_NSEvent = _get_class(b"NSEvent")
+_OTHER_EVENT = _selector(b"otherEventWithType:location:modifierFlags:timestamp:windowNumber:context:subtype:data1:data2:")
+_CG_EVENT = _selector(b"CGEvent")
+_SOUND_UP, _SOUND_DOWN = 0, 1  # NX_KEYTYPE_SOUND_UP / DOWN
 try:
     # Not variadic, unlike CGEventCreateScrollWheelEvent, so it is safe to call through ctypes. macOS 13+.
     _create_scroll = _fn(_cg, "CGEventCreateScrollWheelEvent2", ctypes.c_void_p,
@@ -90,8 +115,25 @@ def press_key(keycode, modifiers=()):
         _send(_create_key(None, _MODIFIER_KEYS[mod], False), flags)
 
 
+def _media_key(key):
+    """Press a keyboard media key, so macOS changes the volume and shows its volume bar."""
+    pool = _pool_push()
+    try:
+        for state in (0xA, 0xB):  # key down, key up
+            event = _new_system_event(_NSEvent, _OTHER_EVENT, 14, CGPoint(0, 0), state << 8, 0.0, 0,
+                                      None, 8, (key << 16) | (state << 8), -1)
+            if event:
+                _post(_HID_TAP, _event_to_cg(event, _CG_EVENT))
+    finally:
+        _pool_pop(pool)
+
+
 def change_volume(delta):
-    """Raise or lower the system output volume without blocking the camera loop."""
+    """Raise or lower the volume. Uses the volume keys (with the on-screen volume bar)
+    when allowed to send key presses, otherwise sets the volume directly."""
+    if can_press_keys():
+        _media_key(_SOUND_UP if delta > 0 else _SOUND_DOWN)
+        return
     script = (
         "set v to (output volume of (get volume settings)) + ({})\n"
         "if v > 100 then set v to 100\n"
@@ -150,9 +192,19 @@ def perform(action):
         scroll(*args)
 
 
-def can_press_keys():
-    """True when macOS has granted Accessibility access, which keys and the mouse need."""
-    return bool(_is_trusted())
+def can_press_keys(ask=False):
+    """True when macOS has granted Accessibility access, which keys and the mouse need.
+
+    With ask=True macOS shows its own permission dialog and adds this exact
+    version of the app to the Accessibility list, ready to be switched on.
+    """
+    keys = (ctypes.c_void_p * 1)(_PROMPT_KEY.value)
+    values = (ctypes.c_void_p * 1)((_CF_TRUE if ask else _CF_FALSE).value)
+    options = _dict_create(None, keys, values, 1, None, None)
+    try:
+        return bool(_is_trusted(options))
+    finally:
+        _release(options)
 
 
 def open_accessibility_settings():
